@@ -1,33 +1,25 @@
 package com.pm.patientservice.mapper;
 
-import java.time.LocalDate;
-
+import com.pm.patientservice.dto.PatientRequestDTO;
 import com.pm.patientservice.dto.PatientResponseDTO;
 import com.pm.patientservice.model.Patient;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
-import com.pm.patientservice.dto.PatientRequestDTO;
 
 
-public class PatientMapper {
-    public static PatientResponseDTO toDTO(Patient patient) {
-        PatientResponseDTO PatientDto = new PatientResponseDTO();
-        PatientDto.setId(patient.getId().toString());
-        PatientDto.setName(patient.getName());
-        PatientDto.setEmail(patient.getEmail());
-        PatientDto.setAddress(patient.getAddress());
-        PatientDto.setDateOfBirth(patient.getDateOfBirth().toString());
-        
-        return PatientDto;
-    }
 
-    public static Patient toModel(PatientRequestDTO patientRequestDTO) {
-        Patient patient = new Patient();
-        patient.setName(patientRequestDTO.getName());
-        patient.setEmail(patientRequestDTO.getEmail());
-        patient.setAddress(patientRequestDTO.getAddress());
-        patient.setDateOfBirth(LocalDate.parse(patientRequestDTO.getDateOfBirth()));
-        patient.setRegisteredDate(LocalDate.parse(patientRequestDTO.getRegisteredDate()));
-        
-        return patient;
-    }
+@Mapper(componentModel = "spring") // Позволяет внедрять маппер через @Autowired/final
+public interface PatientMapper {
+
+    // MapStruct сам поймет, как превратить UUID в String и обратно
+    PatientResponseDTO toDTO(Patient patient);
+
+    // MapStruct сам вызовет LocalDate.parse(), если имена полей совпадают
+    Patient toModel(PatientRequestDTO patientRequestDTO);
+
+    @Mapping(target = "id", ignore = true) // Don't overwrite the ID
+    void updatePatientFromDto(PatientRequestDTO dto, @MappingTarget Patient entity);
+
 }
