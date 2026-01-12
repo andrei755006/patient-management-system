@@ -1,0 +1,24 @@
+server:
+  port: 5000 # Internal service port
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    # Use environment variables for Docker, fallback to localhost for local IDE development
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5001/auth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:admin_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:password}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    # Performance optimization: disables the Open Session In View pattern
+    open-in-view: false
+
+jwt:
+  # RSA Keys configuration (DER format)
+  private-key-path: /app/certs/private_key.der
+  public-key-path: /app/certs/public_key.der
+  # Token expiration: 1 hour (in milliseconds)
+  expiration: 3600000

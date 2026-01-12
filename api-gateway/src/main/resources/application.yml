@@ -1,0 +1,43 @@
+server:
+  port: 4004
+
+spring:
+  application:
+    name: api-gatewayы
+  cloud:
+    gateway:
+      routes:
+        # --- PATIENT SERVICE ROUTE ---
+        # REST CLIENT -> http://localhost:4004/api/patients
+        # GATEWAY -> Auth Check -> StripPrefix(1) -> http://patient-service:4000/patients
+        - id: patient-service-route
+          uri: http://patient-service:4000
+          predicates:
+            - Path=/api/patients/**
+          filters:
+            - AuthenticationFilter # Your custom JWT logic
+            - StripPrefix=1        # Removes "/api" before sending to microservice
+
+        # --- AUTH SERVICE ROUTE ---
+        # No AuthenticationFilter here, otherwise nobody could register/login!
+        - id: auth-service-route
+          uri: http://auth-service:5000
+          predicates:
+            - Path=/api/v1/auth/**
+
+        # --- API DOCS ROUTE ---
+        - id: api-docs-patient-route
+          uri: http://patient-service:4000
+          predicates:
+            - Path=/api-docs/patients
+          filters:
+            - RewritePath=/api-docs/patients, /v3/api-docs
+jwt:
+  # Public key path inside the gateway's resources
+  public-key-path: /app/certs/public_key.der
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: routes,health,info

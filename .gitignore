@@ -1,0 +1,16 @@
+# Java
+**/target/
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Keys & Secrets (ОЧЕНЬ ВАЖНО)
+**/certs/*.pem
+**/certs/*.der
+.env
+
+# OS
+.DS_Store

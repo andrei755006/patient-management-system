@@ -1,0 +1,4 @@
+### Get all patients
+GET http://localhost:4004/api/patients
+Accept: application/json
+
