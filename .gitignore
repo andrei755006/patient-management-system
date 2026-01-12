@@ -12,5 +12,6 @@
 **/certs/*.der
 .env
 
+certs-shared/
 # OS
 .DS_Store
