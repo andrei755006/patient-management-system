@@ -15,7 +15,11 @@ spring:
     show-sql: true
     # Performance optimization: disables the Open Session In View pattern
     open-in-view: false
-
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
 jwt:
   # RSA Keys configuration (DER format)
   private-key-path: /app/certs/private_key.der
