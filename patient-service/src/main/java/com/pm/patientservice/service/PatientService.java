@@ -11,6 +11,8 @@ import com.pm.patientservice.model.Patient;
 import com.pm.patientservice.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +21,13 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor // Generates constructor for all final fields
+@RequiredArgsConstructor
 public class PatientService {
 
     private final PatientRepository patientRepository;
     private final BillingServiceGrpcClient billingServiceGrpcClient;
     private final KafkaProducer kafkaProducer;
-    private final PatientMapper patientMapper; // Now injected as a bean
+    private final PatientMapper patientMapper;
 
     public List<PatientResponseDTO> getPatients() {
         log.info("Retrieving all patients from database");
@@ -34,11 +36,20 @@ public class PatientService {
                 .toList();
     }
 
-    @Transactional // Ensures database, gRPC, and Kafka stay consistent
+    @Transactional
     public PatientResponseDTO createPatient(PatientRequestDTO patientRequestDTO) {
         if (patientRepository.existsByEmail(patientRequestDTO.getEmail())) {
             throw new EmailAlreadyExistsException("A patient with this email already exists: " + patientRequestDTO.getEmail());
         }
+
+        // Extract roles from the security context (from JWT)
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info("Current user authorities: {}", authentication != null ? authentication.getAuthorities() : "NULL");
+        List<String> roles = (authentication != null)
+                ? authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList()
+                : List.of();
 
         // 1. Map DTO to Entity and Save
         Patient patient = patientMapper.toModel(patientRequestDTO);
@@ -47,18 +58,13 @@ public class PatientService {
 
         // 2. Call Billing Service via gRPC
         try {
-            billingServiceGrpcClient.createBillingAccount(
-                    savedPatient.getId().toString(),
-                    savedPatient.getName(),
-                    savedPatient.getEmail()
-            );
+            billingServiceGrpcClient.createBillingAccount(savedPatient, roles);
         } catch (Exception e) {
             log.error("Failed to create billing account for patient {}: {}", savedPatient.getId(), e.getMessage());
-            // Optionally throw exception to rollback transaction
         }
 
         // 3. Send event to Kafka
-        kafkaProducer.sendEvent(savedPatient);
+        kafkaProducer.sendEvent(savedPatient, "PATIENT_CREATED", roles);
 
         return patientMapper.toDTO(savedPatient);
     }
@@ -72,12 +78,21 @@ public class PatientService {
             throw new EmailAlreadyExistsException("Email already in use by another patient: " + patientRequestDTO.getEmail());
         }
 
-        // Use MapStruct to update existing entity with DTO data
-        // For this to work, we'll add one method to PatientMapper (see below)
-        patientMapper.updatePatientFromDto(patientRequestDTO, patient);
+        // Fetch roles for update event
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        List<String> roles = (authentication != null)
+                ? authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList()
+                : List.of();
 
+        patientMapper.updatePatientFromDto(patientRequestDTO, patient);
         Patient updatedPatient = patientRepository.save(patient);
         log.info("Updated patient with ID: {}", id);
+
+        // Notify Kafka about the update
+        kafkaProducer.sendEvent(updatedPatient, "PATIENT_UPDATED", roles);
+
         return patientMapper.toDTO(updatedPatient);
     }
 

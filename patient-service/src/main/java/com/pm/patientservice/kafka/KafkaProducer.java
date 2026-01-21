@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import patient.events.PatientEvent;
+import java.util.List;
 
 @Service
 public class KafkaProducer {
@@ -17,12 +18,13 @@ public class KafkaProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void sendEvent(Patient patient) {
+    public void sendEvent(Patient patient, String eventType, List<String> roles) {
         PatientEvent event = PatientEvent.newBuilder()
                 .setPatientId(patient.getId().toString())
                 .setName(patient.getName())
                 .setEmail(patient.getEmail())
                 .setEventType("PATIENT_CREATED")
+                .addAllRoles(roles)
                 .build();
 
         try {
