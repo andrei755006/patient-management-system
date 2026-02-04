@@ -14,6 +14,7 @@ message BillingRequest {
     string patientId = 1;
     string name = 2;
     string email = 3;
+    repeated string roles = 4;
 }
 
 message BillingResponse {

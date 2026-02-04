@@ -1,15 +1,16 @@
 package com.pm.patientservice.grpc;
 
-// Эти импорты должны совпасть с тем, что я написал в .proto (Вариант А)
 import com.pm.billingservice.grpc.billing.BillingResponse;
 import com.pm.billingservice.grpc.billing.BillingRequest;
 import com.pm.billingservice.grpc.billing.BillingServiceGrpc;
-
+import com.pm.patientservice.model.Patient; // Importing Patient domain model
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.List; // Used for patient roles
 
 @Service
 @Slf4j
@@ -30,17 +31,20 @@ public class BillingServiceGrpcClient {
         blockingStub = BillingServiceGrpc.newBlockingStub(channel);
     }
 
-    public BillingResponse createBillingAccount(String patientId, String name, String email) {
-        log.info("Sending gRPC request to create billing account for patient: {}", patientId);
+    // UPDATED SIGNATURE: Accepts a Patient object and a list of roles
+    public BillingResponse createBillingAccount(Patient patient, List<String> roles) {
+        log.info("Sending gRPC request for patient: {} with roles: {}", patient.getId(), roles);
 
-        BillingRequest request = BillingRequest.newBuilder()
-                .setPatientId(patientId)
-                .setName(name)
-                .setEmail(email)
+        // Using 'var' for cleaner and more modern code
+        var request = BillingRequest.newBuilder()
+                .setPatientId(patient.getId().toString())
+                .setName(patient.getName())
+                .setEmail(patient.getEmail())
+                .addAllRoles(roles) // This field was added in the .proto definition
                 .build();
 
         try {
-            BillingResponse response = blockingStub.createBillingAccount(request);
+            var response = blockingStub.createBillingAccount(request);
             log.info("Billing account created. ID: {}, Status: {}", response.getAccountId(), response.getStatus());
             return response;
         } catch (Exception e) {

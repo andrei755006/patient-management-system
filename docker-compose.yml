@@ -88,6 +88,8 @@ services:
       - kafka
     networks:
       - internal
+    volumes:
+      - ./certs-shared:/app/certs
     ports:
       - "9000:9000"  # gRPC (добавляем для консистентности)
 
