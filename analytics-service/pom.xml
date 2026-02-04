@@ -19,7 +19,7 @@
 
     <properties>
         <java.version>21</java.version>
-        <protobuf.version>4.29.1</protobuf.version>
+        <protobuf.version>3.25.5</protobuf.version>
         <grpc.version>1.68.1</grpc.version>
     </properties>
 
@@ -97,9 +97,16 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <version>0.6.1</version>
                 <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <protocArtifact>com.google.protobuf:protoc:3.25.5:exe:linux-x86_64</protocArtifact>
                     <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:linux-x86_64</pluginArtifact>
+
+                    <protoSourceRoot>../shared-proto/proto</protoSourceRoot>
+
+                    <includes>
+                        <include>patient/v1/*.proto</include>
+                    </includes>
+
                 </configuration>
                 <executions>
                     <execution>
